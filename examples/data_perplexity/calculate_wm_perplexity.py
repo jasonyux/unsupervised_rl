@@ -129,7 +129,7 @@ def calculate_seq_perplexity(
     with torch.no_grad():
         outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
         nll_likelihood = outputs.loss
-    
+    nll_likelihood = torch.clamp(nll_likelihood, min=-1e6, max=10)
     ppl = torch.exp(nll_likelihood)
     return ppl.cpu().item(), n_loss_tokens, n_total_tokens
 
