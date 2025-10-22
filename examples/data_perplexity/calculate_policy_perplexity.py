@@ -133,14 +133,16 @@ def calculate_seq_perplexity(
 """
 Example:
 python examples/data_perplexity/calculate_policy_perplexity.py \
-    --dset_fpath data/sft/alfworld/solver_validation/alfworld_expert_optimal.parquet \
-    --model_id Qwen/Qwen2.5-7B-Instruct
+--dset_fpath data/sft/alfworld/solver_validation/alfworld_expert_optimal.parquet \
+--max_samples 1000 \
+--model_id Qwen/Qwen2.5-7B-Instruct
 """
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dset_fpath", type=str, required=True)
     parser.add_argument("--model_id", type=str, required=True)
     parser.add_argument("--max_seq_len", type=int, default=2048)
+    parser.add_argument("--max_samples", type=int, default=None)
     args = parser.parse_args()
 
     print(f"received args: {args}")
@@ -151,7 +153,8 @@ if __name__ == "__main__":
     dset_fpath = args.dset_fpath
     dset = load_dataset('parquet', data_files=dset_fpath)['train']
     all_chat_messages = []
-    for sample in dset:
+    max_samples = len(dset) if args.max_samples is None else min(args.max_samples, len(dset))
+    for sample in dset.select(range(max_samples)):
         messages = sample['messages']
         # assumes text only model
         messages[0] = {
