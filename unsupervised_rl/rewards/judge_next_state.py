@@ -3,7 +3,8 @@ import os
 import openai
 import numpy as np
 import concurrent.futures
-
+import tiktoken
+import time
 
 # WM_JUDGE_PROMPT_V1 = """
 # {obs_text}
@@ -161,8 +162,83 @@ Directly output the JSON object. DO NOT generate anything else.
 """.strip()
 
 
+WM_JUDGE_PROMPT_V3 = """
+{obs_text}
+
+# Action proposed by an AI agent
+{action_text}
+
+# Predicted Next observation
+After executing the above action, another AI agent predicted the next observation as follows:
+{next_obs_desc}
+
+# Actual Next observation
+The actual next observation from the environment is as follows:
+{actual_next_obs_text}
+
+# Evaluate the predicted next observation
+Now, your task is to evaluate how well the predicted next observation matches the actual next observation.
+Specifically, you need to judge whether the prediction demonstrates a *genuine* understanding of the environment dynamics relevant to the task, using the actual next observation as reference.
+
+Award points for:
+- Specific and accurate environment description in the prediction that matches the actual next observation.
+- Correct prediction of task completion status.
+Penalize:
+- Incorrect environment descriptions in the prediction that differ from the actual next observation, especially those that cold impact (future) task completion. 
+- Missing or wrong task completion status in the prediction compared to the actual next observation.
+STRONGLY penalize:
+- The prediction misses key information from the actual next observation that is important for solving the task.
+- Vague or generic descriptions that is consistent with the actual next observation but does not really show genuine understanding of the environment dynamics.
+
+# Your output format
+Your task is to output a JSON object in the following format:
+<json>
+{{
+    "positive aspects": "enumerating good aspects of the agent's prediction according to the guidelines above, using the actual next observation as reference.",  # no more than 200 words
+    "negative aspects": "enumerating bad aspects of the agent's prediction according to the guidelines above, using the actual next observation as reference.",  # no more than 200 words
+    "overall analysis": "overall analysis weighing both aspects, and whether you think the agent has a genuine understanding of the environment dynamics.",  # no more than 50 words
+    "score": 0.0-1.0 # overall score summarizing your judgement. higher the better.
+}}
+</json>
+Directly output the JSON object. DO NOT generate anything else.
+""".strip()
+
+
+
+WM_JUDGE_PROMPT_V4 = """
+{obs_text}
+
+# Action proposed by an AI agent
+{action_text}
+
+# Predicted Next observation
+After executing the above action, another AI agent predicted the next observation as follows:
+{next_obs_desc}
+
+# Actual Next observation
+The actual next observation from the environment is as follows:
+{actual_next_obs_text}
+
+# Evaluate the predicted next observation
+Now, your task is to evaluate how well the predicted next observation matches the actual next observation.
+Specifically, you need to judge whether the prediction demonstrates a *genuine* understanding of the environment dynamics relevant to the task, using the actual next observation as reference.
+- If all important task-related information in the actual next observation is PRESENT in the predicted next observation AND the task completion status matches the reference in the actual next observation, assign a score of 1.0.
+- Otherwise, assign a score of 0.0.
+
+# Your output format
+Your task is to output a JSON object in the following format:
+<json>
+{{
+    "analysis": "which important task related content is present/missing in the predicted next observation, and whether the task completion status is correctly predicted.",  # no more than 200 words
+    "score": 0.0 or 1.0
+}}
+</json>
+Directly output the JSON object. DO NOT generate anything else.
+""".strip()
+
 
 _JUDGE_CFG_IN_COMPUTE_SCORE = {}
+_HELPER_TOKENIZER = tiktoken.encoding_for_model("gpt-4o")
 
 
 def _get_judge_config():
@@ -170,11 +246,13 @@ def _get_judge_config():
     api_key = os.getenv("JUDGE_MODEL_API_KEY")
     judge_model_id = os.getenv("JUDGE_MODEL_NAME")
     judge_gen_kwargs = json.loads(os.getenv("JUDGE_GEN_KWARGS", "{}"))
+    max_token_to_judge = int(os.getenv("JUDGE_MAX_TOKEN_TO_JUDGE", "1024"))
     return {
         "api_base": api_base,
         "api_key": api_key,
         "judge_model_id": judge_model_id,
         "judge_gen_kwargs": judge_gen_kwargs,
+        "max_token_to_judge": max_token_to_judge,
     }
 
 
@@ -183,6 +261,22 @@ def _init_openai_client():
     api_base = judge_cfg["api_base"]
     api_key = judge_cfg["api_key"]
     return openai.OpenAI(base_url=api_base, api_key=api_key)
+
+
+def _parse_nsp(data_source, solution_str, parsing_metadata, max_token_to_judge):
+    nsp_parse_tags = parsing_metadata["nsp_parse_tags"]
+    start_tag, end_tag = nsp_parse_tags
+    start_idx = solution_str.rfind(start_tag)
+    end_idx = solution_str.rfind(end_tag)
+    if start_idx == -1 or end_idx == -1:
+        return "none"
+    if start_idx >= end_idx:
+        return "none"
+    nsp_text = solution_str[start_idx+len(start_tag):end_idx]
+    nsp_text = _HELPER_TOKENIZER.decode(
+        _HELPER_TOKENIZER.encode(nsp_text)[:max_token_to_judge]
+    )
+    return nsp_text.strip()
 
 
 def compute_score(data_source, solution_str, ground_truth, extra_info=None) -> float:
@@ -195,12 +289,18 @@ def compute_score(data_source, solution_str, ground_truth, extra_info=None) -> f
     obs_text = extra_info["obs_text"]
     obs_images = extra_info["obs_images"]
     action_text = extra_info["action_text"]
+    parsing_metadata = extra_info.get("parsing_metadata", {})
+    max_token_to_judge = judge_cfg["max_token_to_judge"]
+    if parsing_metadata:
+        solution_str = _parse_nsp(data_source, solution_str, parsing_metadata, max_token_to_judge)
     
     assert obs_images is None, \
         "multimodal observation is not supported yet"
     
     # prompt = WM_JUDGE_PROMPT_V1.format(
-    prompt = WM_JUDGE_PROMPT_V2.format(
+    # prompt = WM_JUDGE_PROMPT_V2.format(
+    # prompt = WM_JUDGE_PROMPT_V3.format(
+    prompt = WM_JUDGE_PROMPT_V4.format(
         obs_text=obs_text,
         action_text=action_text,
         next_obs_desc=solution_str,
@@ -234,6 +334,7 @@ def _compute_single_score_wrapper(idx, data_source, solution_str, ground_truth, 
 
 def batched_compute_score(data_sources, solution_strs, ground_truths, extra_infos, **kwargs) -> list[float]:
     concurrency = 16
+    _start_time = time.time()
     with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
         futures = []
         for i in range(len(data_sources)):
@@ -244,8 +345,15 @@ def batched_compute_score(data_sources, solution_strs, ground_truths, extra_info
             futures.append(future)
         
         results = [None] * len(futures)
-        # with concurrent.futures.as_completed(futures) as completed:
+        n_completed = 0
         for future in concurrent.futures.as_completed(futures):
             idx, result = future.result()
             results[idx] = result
+            n_completed += 1
+
+            if n_completed % 100 == 0:
+                elapsed_time = (time.time() - _start_time) / 60.0
+                print(f"[batched_compute_score] {n_completed}/{len(futures)} completed in {elapsed_time:.2f}m")
+    elapsed_time = (time.time() - _start_time) / 60.0
+    print(f"[batched_compute_score] {len(futures)} completed in {elapsed_time:.2f}m")
     return results
