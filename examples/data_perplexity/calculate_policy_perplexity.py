@@ -43,8 +43,9 @@ def tokenize_single(
     for i, msg in enumerate(messages):
         # Get tokens for messages up to this point to find the start position
         prefix_messages = messages[: i + 1]
+        last_turn_role = prefix_messages[-1]['role']
         prefix_msg_text = tokenizer.apply_chat_template(
-            prefix_messages, tokenize=False
+            prefix_messages, tokenize=False, add_generation_prompt=True if last_turn_role == "user" else False
         )
         prefix_tokens = tokenizer(
             text=[prefix_msg_text],
@@ -53,8 +54,9 @@ def tokenize_single(
             truncation='do_not_truncate'
         )['input_ids'][0]
         if i > 0:
+            last_turn_role = messages[i-1]['role']
             prev_msg_text = tokenizer.apply_chat_template(
-                messages[:i], tokenize=False
+                messages[:i], tokenize=False, add_generation_prompt=True if last_turn_role == "user" else False
             )
             prev_tokens = tokenizer(
                 text=[prev_msg_text],
