@@ -11,22 +11,16 @@ N_GPUS=2
 ### model
 # model_path=Qwen/Qwen2.5-7B-Instruct
 # model_id=qwen2.5-7b
-# model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-solver_all-custnsppromptv1-2048seeds-1.0_1.0p-2epoch-2e-6lr-2048seq/checkpoint-1114
-# model_id=qwen2.5-7b-nspred_sft-solver_all-custnsppromptv1-2048seeds-ckpt1114
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-solver-all-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-combined0to2048-bsz32-gen512-jdgd128/global_step_172/checkpoint-172-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-solver-all-custnsppromptv1-shortsubp-s30h2-2048s-ckpt172
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-solver-all-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-combined0to2048-bsz32-gen512-jdgd128-ep4/global_step_344/checkpoint-344-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-solver-all-custnsppromptv1-shortsubp-s30h2-2048s-ckpt344
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-bsz32-gen512-jdgd128-ep2/global_step_710/checkpoint-710-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-shortsubp-s30h2-2048s-ckpt710
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-mstatep-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep1/global_step_793/checkpoint-793-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-mstatep-s30h2t1.0_3repeats-ckpt793
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnspwsuccv2simu-shortsubpfail0.3-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_624/checkpoint-624-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnspwsuccv2simu-shortsubpfail0.3-s30h2t1.0_3repeats-ckpt624
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-sampr-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_1062/checkpoint-1062-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-sampr-s30h2t1.0_3repeats-ckpt1062
-model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp32bgt30ppl-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_598/checkpoint-598-actor
-model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp32bgt30ppl-s30h2t1.0_3repeats-ckpt598
+model_path=Qwen/Qwen3-8B
+model_id=qwen3-8b
+# model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-1.0p-2epoch-2e-6lr-2048seq/checkpoint-1978
+# model_id=qwen2.5-7b-nspred_sft-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-s30h2t1.0_3repeats-ckpt1978
+# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp0.0r-nots-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_988/checkpoint-988-actor
+# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp0.0r-nots-s30h2t1.0_3repeats-ckpt988
+# model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-1.0p-2epoch-2e-6lr-2048seq/checkpoint-990
+# model_id=qwen2.5-7b-nspred_sft-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-ckpt990
+# model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-nothink-1.0p-2epoch-2e-6lr-2048seq/checkpoint-990
+# model_id=qwen2.5-7b-nspred_sft-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-nothink-ckpt990
 disable_mm_preprocessor_cache=False  # use True for VL models
 disable_cascade_attn=True # use True for A100
 save_intermediate_outputs=True
@@ -38,13 +32,12 @@ env_id=alfworld-text
 # env_max_steps=50
 env_max_steps=15
 # env_max_steps=10
-# env_text_template_key='default_w_plan_w_refl'
 env_text_template_key='default_w_refl'
 max_history_length=2
 
 
 max_prompt_length=2048
-response_length=1024
+response_length=4096
 
 
 ### data and batching

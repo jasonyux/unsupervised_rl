@@ -1,5 +1,6 @@
 set -x
 
+export VLLM_USE_V1=0
 export WANDB_PROJECT=rl_early_experience
 export WANDB_RUN_GROUP=alfworld_state_pred
 
@@ -11,41 +12,6 @@ N_TENSOR_PARALLEL=1
 # N_TENSOR_PARALLEL=2
 
 
-# train_dset_fpath=data/state_pred/alfworld/train_alfworld_react-qwen3-235b-inst-default_w_refl-step30_hist2_temp1.0.parquet
-# val_dset_fpath=data/state_pred/alfworld/test_alfworld_react-qwen3-235b-inst-default_w_refl-step30_hist2_temp1.0.parquet
-# train_dset_fpath=data/state_pred/alfworld/solver-all-default_w_refl-step30_hist2/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-default_w_refl-step30_hist2/test.parquet
-# dset_short_name=solver-all-default_w_refl-step30_hist2
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2/test.parquet
-# dset_short_name=solver-all-custnsppromptv1-default_w_refl-step30_hist2
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048/test.parquet
-# dset_short_name=solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1_w_choices-default_w_refl-step30_hist2-combined0to2048/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1_w_choices-default_w_refl-step30_hist2-combined0to2048/test.parquet
-# dset_short_name=solver-all-custnsppromptv1_w_choices-default_w_refl-step30_hist2-combined0to2048
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048/train_shortsubp.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048/test_shortsubp.parquet
-# dset_short_name=solver-all-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-combined0to2048
-# train_dset_fpath=data/state_pred/alfworld/solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-default_w_refl-step30_hist2/train_shortsubp.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-default_w_refl-step30_hist2/test_shortsubp.parquet
-# dset_short_name=solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-shortsubp-default_w_refl-step30_hist2
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist5-combined0to2048/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist5-combined0to2048/test.parquet
-# dset_short_name=solver-all-custnsppromptv1-default_w_refl-step30_hist5-combined0to2048
-# train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp.parquet
-# val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp.parquet
-# dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-default_w_refl-s30h2t1.0_3repeats
-# train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnspwsuccv2simu-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_failp0.3.parquet
-# val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnspwsuccv2simu-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_failp0.3_512.parquet
-# dset_short_name=react-qwen7b-inst-custnspwsuccv2simu-shortsubpfail0.3-default_w_refl-s30h2t1.0_3repeats
-# train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_sampr.parquet
-# val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_512.parquet
-# dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-sampr-default_w_refl-s30h2t1.0_3repeats
-# train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_sampgt10ppl.parquet
-# val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_512.parquet
-# dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-sampgt10ppl-default_w_refl-s30h2t1.0_3repeats
 train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_samp0.0r.parquet
 val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_512.parquet
 dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-samp0.0r-default_w_refl-s30h2t1.0_3repeats
@@ -70,11 +36,11 @@ max_response_length=512
 JUDGE_EMBED_MODEL_API_BASE=http://blp-wmrlzrmz5-master-1.blp-wmrlzrmz5:12200/v1
 JUDGE_EMBED_MODEL_API_KEY=empty
 JUDGE_EMBED_MODEL_NAME=qwen-embedding-8b
+JUDGE_EMBED_QUERY_TEMPLATE_NAME=v1
 JUDGE_GEN_KWARGS='{}'
 JUDGE_MAX_TOKEN_TO_JUDGE=100
 JUDGE_SCORE_THRESHOLD=0.9
 JUDGE_API_CONCURRENCY=4
-JUDGE_EMBED_QUERY_TEMPLATE_NAME=v1
 reward_fn_path=unsupervised_rl/rewards/embed_next_state.py
 reward_short_name=q8b-embed
 
@@ -84,8 +50,10 @@ reward_manager=batch
 reward_fn_name=batched_compute_score
 
 
-model_path=Qwen/Qwen2.5-7B-Instruct
-model_id=qwen2.5-7b
+# model_path=Qwen/Qwen2.5-7B-Instruct
+# model_id=qwen2.5-7b
+model_path=checkpoints/alfworld_state_pred/run2-alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp0.0r-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_988/checkpoint-988-actor
+model_id=run2-qwen2.5-7b-state_pred-samp0.0r-s30h2ckpt988
 # model_path=Qwen/Qwen2.5-32B-Instruct
 # model_id=qwen2.5-32b
 # model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-react-qwen7b-inst-custnsppromptv1-3repeats-shortsubp-1.0p-1epoch-2e-6lr-2048seq/checkpoint-1313
@@ -155,8 +123,8 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.4 \
     actor_rollout_ref.rollout.n=$group_size \
     actor_rollout_ref.rollout.enable_chunked_prefill=False \
-    actor_rollout_ref.rollout.enforce_eager=False \
-    actor_rollout_ref.rollout.free_cache_engine=False \
+    actor_rollout_ref.rollout.enforce_eager=True \
+    actor_rollout_ref.rollout.free_cache_engine=True \
     actor_rollout_ref.rollout.val_kwargs.temperature=$val_temperature \
     actor_rollout_ref.rollout.val_kwargs.do_sample=True \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=$log_prob_micro_batch_size_per_gpu \

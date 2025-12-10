@@ -1,7 +1,7 @@
 set -x
 ENGINE=${1:-vllm}
 # export VLLM_ATTENTION_BACKEND=XFORMERS
-# export VLLM_USE_V1=False
+export VLLM_USE_V1=0
 export WANDB_PROJECT=rl_early_experience
 export WANDB_RUN_GROUP=alfworld_rl_after_state_pred
 
@@ -11,8 +11,20 @@ N_GPUS=2
 ### model
 # model_path=Qwen/Qwen2.5-7B-Instruct
 # model_id=qwen2.5-7b
-model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-solver_all-custnsppromptv1-2048seeds-1.0_1.0p-2epoch-2e-6lr-2048seq/checkpoint-1114
-model_id=qwen2.5-7b-nspred_sft-solver_all-custnsppromptv1-2048seeds-ckpt1114
+# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-bsz32-gen512-jdgd128-ep2/global_step_710/checkpoint-710-actor
+# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-shortsubp-s30h2-2048s-ckpt710
+# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep1/global_step_656/checkpoint-656-actor
+# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-s30h2t1.0_3repeats-ckpt656
+# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-mstatep-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep1/global_step_793/checkpoint-793-actor
+# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-mstatep-s30h2t1.0_3repeats-ckpt793
+# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp0.0r-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_988/checkpoint-988-actor
+# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp0.0r-s30h2t1.0_3repeats-ckpt988
+# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-sampgt10ppl-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_884/checkpoint-884-actor
+# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-sampgt10ppl-s30h2t1.0_3repeats-ckpt884
+# model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-1.0p-2epoch-2e-6lr-2048seq/checkpoint-1978
+# model_id=qwen2.5-7b-nspred_sft-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-s30h2t1.0_3repeats-ckpt1978
+model_path=checkpoints/alfworld_state_pred/alfworld-run2-qwen2.5-7b-state_pred-samp0.0r-s30h2ckpt988-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp0.0r-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-thresh0.9-ep2/global_step_988/checkpoint-988-actor
+model_id=run2-qwen2.5-7b-state_pred-samp0.0r-s30h2ckpt988-cont-thresh0.9-ckpt988
 disable_mm_preprocessor_cache=False  # use True for VL models
 disable_cascade_attn=True # use True for A100
 save_intermediate_outputs=True
@@ -36,7 +48,7 @@ response_length=1024
 ### data and batching
 # train_data_size=32
 train_data_size=8
-val_data_size=128
+val_data_size=64
 group_size=8  # default 8
 mode="mean_std_norm" # "mean_norm" or "mean_std_norm"
 
@@ -111,8 +123,8 @@ python -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.name=$ENGINE \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.6 \
     actor_rollout_ref.rollout.enable_chunked_prefill=False \
-    actor_rollout_ref.rollout.enforce_eager=False \
-    actor_rollout_ref.rollout.free_cache_engine=False \
+    actor_rollout_ref.rollout.enforce_eager=True \
+    actor_rollout_ref.rollout.free_cache_engine=True \
     actor_rollout_ref.rollout.val_kwargs.temperature=$val_temperature \
     actor_rollout_ref.rollout.val_kwargs.do_sample=True \
     actor_rollout_ref.rollout.engine_kwargs.vllm.disable_mm_preprocessor_cache=$disable_mm_preprocessor_cache \
@@ -133,6 +145,7 @@ python -m verl.trainer.main_ppo \
     env.max_history_length=$max_history_length \
     env.rollout.n=$group_size \
     env.env_name=alfworld/AlfredTWEnv \
+    trainer.ray_wait_register_center_timeout=600 \
     trainer.critic_warmup=0 \
     trainer.logger=['console','wandb'] \
     trainer.project_name=$WANDB_PROJECT \

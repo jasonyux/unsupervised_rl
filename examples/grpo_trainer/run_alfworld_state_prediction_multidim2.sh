@@ -10,45 +10,15 @@ N_TENSOR_PARALLEL=1
 # N_GPUS=8
 # N_TENSOR_PARALLEL=2
 
-
-# train_dset_fpath=data/state_pred/alfworld/train_alfworld_react-qwen3-235b-inst-default_w_refl-step30_hist2_temp1.0.parquet
-# val_dset_fpath=data/state_pred/alfworld/test_alfworld_react-qwen3-235b-inst-default_w_refl-step30_hist2_temp1.0.parquet
-# train_dset_fpath=data/state_pred/alfworld/solver-all-default_w_refl-step30_hist2/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-default_w_refl-step30_hist2/test.parquet
-# dset_short_name=solver-all-default_w_refl-step30_hist2
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2/test.parquet
-# dset_short_name=solver-all-custnsppromptv1-default_w_refl-step30_hist2
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048/test.parquet
-# dset_short_name=solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1_w_choices-default_w_refl-step30_hist2-combined0to2048/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1_w_choices-default_w_refl-step30_hist2-combined0to2048/test.parquet
-# dset_short_name=solver-all-custnsppromptv1_w_choices-default_w_refl-step30_hist2-combined0to2048
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048/train_shortsubp.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist2-combined0to2048/test_shortsubp.parquet
-# dset_short_name=solver-all-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-combined0to2048
-# train_dset_fpath=data/state_pred/alfworld/solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-default_w_refl-step30_hist2/train_shortsubp.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-default_w_refl-step30_hist2/test_shortsubp.parquet
-# dset_short_name=solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-shortsubp-default_w_refl-step30_hist2
-# train_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist5-combined0to2048/train.parquet
-# val_dset_fpath=data/state_pred/alfworld/solver-all-custnsppromptv1-default_w_refl-step30_hist5-combined0to2048/test.parquet
-# dset_short_name=solver-all-custnsppromptv1-default_w_refl-step30_hist5-combined0to2048
-# train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp.parquet
-# val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp.parquet
-# dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-default_w_refl-s30h2t1.0_3repeats
-# train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnspwsuccv2simu-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_failp0.3.parquet
-# val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnspwsuccv2simu-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_failp0.3_512.parquet
-# dset_short_name=react-qwen7b-inst-custnspwsuccv2simu-shortsubpfail0.3-default_w_refl-s30h2t1.0_3repeats
 # train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_sampr.parquet
 # val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_512.parquet
 # dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-sampr-default_w_refl-s30h2t1.0_3repeats
 # train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_sampgt10ppl.parquet
 # val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_512.parquet
 # dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-sampgt10ppl-default_w_refl-s30h2t1.0_3repeats
-train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_samp0.0r.parquet
-val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_512.parquet
-dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-samp0.0r-default_w_refl-s30h2t1.0_3repeats
+train_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/train_shortsubp_samp0.0r_septs.parquet
+val_dset_fpath=data/state_pred/alfworld/react-qwen7b-inst-custnsppromptv1-default_w_refl-step30_hist2_temp1.0_3repeats/test_shortsubp_septs_512.parquet
+dset_short_name=react-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.0r-septs-default_w_refl-s30h2t1.0_3repeats
 
 
 train_batch_size=32
@@ -70,12 +40,14 @@ max_response_length=512
 JUDGE_EMBED_MODEL_API_BASE=http://blp-wmrlzrmz5-master-1.blp-wmrlzrmz5:12200/v1
 JUDGE_EMBED_MODEL_API_KEY=empty
 JUDGE_EMBED_MODEL_NAME=qwen-embedding-8b
+JUDGE_EMBED_QUERY_TEMPLATE_NAME=v2
 JUDGE_GEN_KWARGS='{}'
 JUDGE_MAX_TOKEN_TO_JUDGE=100
-JUDGE_SCORE_THRESHOLD=0.9
+JUDGE_MAX_TS_TOKEN_TO_JUDGE=10
+JUDGE_TS_SCORE_WEIGHT=0.2
 JUDGE_API_CONCURRENCY=4
-JUDGE_EMBED_QUERY_TEMPLATE_NAME=v1
-reward_fn_path=unsupervised_rl/rewards/embed_next_state.py
+JUDGE_EMBED_QUERY_TEMPLATE_NAME=v3 # v1 or v3
+reward_fn_path=unsupervised_rl/rewards/embed_next_state_multidim.py
 reward_short_name=q8b-embed
 
 # reward_manager=naive
@@ -90,6 +62,8 @@ model_id=qwen2.5-7b
 # model_id=qwen2.5-32b
 # model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-react-qwen7b-inst-custnsppromptv1-3repeats-shortsubp-1.0p-1epoch-2e-6lr-2048seq/checkpoint-1313
 # model_id=qwen2.5-7b-nspred_sft-react-qwen7b-inst-custnsppromptv1-3repeats-ckpt1313
+# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.5r-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_1112/checkpoint-1112-actor
+# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samplt0.5r-default_w_refl-s30h2t1.0_3repeats-ckpt1112
 lr=1e-6
 offload_stuff=False
 ppo_mini_batch_size=32
@@ -111,7 +85,7 @@ val_temperature=1.0
 log_val_generations=20
 
 
-exp_name=alfworld-${model_id}-state_pred-grpo-${reward_short_name}-g${group_size}-${dset_short_name}-bsz${train_batch_size}-gen${max_response_length}-jdgd${JUDGE_MAX_TOKEN_TO_JUDGE}-thresh${JUDGE_SCORE_THRESHOLD}-ep${train_epochs}
+exp_name=alfworld-${model_id}-state_pred-grpo-${reward_short_name}-g${group_size}-${dset_short_name}-bsz${train_batch_size}-gen${max_response_length}-jdgd${JUDGE_MAX_TOKEN_TO_JUDGE}n${JUDGE_MAX_TS_TOKEN_TO_JUDGE}-w${JUDGE_TS_SCORE_WEIGHT}-ep${train_epochs}
 default_local_dir=/home/checkpoints/$WANDB_RUN_GROUP/$exp_name
 mv_dir=checkpoints/$WANDB_RUN_GROUP/
 
@@ -169,8 +143,9 @@ python3 -m verl.trainer.main_ppo \
     +custom_reward_function.reward_kwargs.judge_api_key=$JUDGE_EMBED_MODEL_API_KEY \
     +custom_reward_function.reward_kwargs.judge_embed_model_name=$JUDGE_EMBED_MODEL_NAME \
     +custom_reward_function.reward_kwargs.embed_query_template_name=$JUDGE_EMBED_QUERY_TEMPLATE_NAME \
-    +custom_reward_function.reward_kwargs.threshold=$JUDGE_SCORE_THRESHOLD \
     +custom_reward_function.reward_kwargs.max_token_to_judge=$JUDGE_MAX_TOKEN_TO_JUDGE \
+    +custom_reward_function.reward_kwargs.max_ts_token_to_judge=$JUDGE_MAX_TS_TOKEN_TO_JUDGE \
+    +custom_reward_function.reward_kwargs.ts_score_weight=$JUDGE_TS_SCORE_WEIGHT \
     +custom_reward_function.reward_kwargs.judge_api_concurrency=$JUDGE_API_CONCURRENCY \
     trainer.critic_warmup=0 \
     trainer.logger=['console','wandb'] \

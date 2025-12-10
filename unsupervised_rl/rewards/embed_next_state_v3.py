@@ -6,6 +6,7 @@ import concurrent.futures
 import tiktoken
 import time
 import cachetools
+from enum import Enum
 
 
 EMBED_QUERY_TEMPLATE_V1 = """
@@ -29,6 +30,13 @@ Reference: {reference}
 _JUDGE_CFG_IN_COMPUTE_SCORE = {}
 _HELPER_TOKENIZER = tiktoken.encoding_for_model("gpt-4o")
 _EMBED_CACHE = cachetools.Cache(maxsize=1000)
+
+
+class TaskStatusCode(Enum):
+    # "successfully completed", "not yet completed", or "failed"
+    COMPLETED = "successfully completed"
+    IN_PROGRESS = "not yet completed"
+    FAILED = "failed"
 
 
 def _init_openai_client(api_base=None, api_key=None):
@@ -69,6 +77,33 @@ def _has_thinking(solution_str: str) -> bool:
         return n_tokens > 16
 
 
+def _has_exact_match_task_status(solution_str: str, gt_str: str) -> bool:
+    sol_lines = solution_str.strip().splitlines()
+    if not sol_lines:
+        return False
+    last_line = sol_lines[-1].strip()
+    if TaskStatusCode.COMPLETED.value in gt_str:
+        return (
+            TaskStatusCode.COMPLETED.value in last_line \
+            and TaskStatusCode.IN_PROGRESS.value not in last_line \
+            and TaskStatusCode.FAILED.value not in last_line
+        )
+    elif TaskStatusCode.IN_PROGRESS.value in gt_str:
+        return (
+            TaskStatusCode.IN_PROGRESS.value in last_line \
+            and TaskStatusCode.COMPLETED.value not in last_line \
+            and TaskStatusCode.FAILED.value not in last_line
+        )
+    elif TaskStatusCode.FAILED.value in gt_str:
+        return (
+            TaskStatusCode.FAILED.value in last_line \
+            and TaskStatusCode.COMPLETED.value not in last_line \
+            and TaskStatusCode.IN_PROGRESS.value not in last_line
+        )
+    else:
+        raise ValueError(f"unknown {gt_str=}")
+
+
 def compute_score(
     data_source,
     solution_str,
@@ -79,7 +114,8 @@ def compute_score(
     judge_embed_model_name=None,
     max_token_to_judge=None,
     embed_query_template_name=None,
-    threshold: int = 0.8
+    threshold: float = 0.8,
+    penalize_no_thinking: bool = True,
 ) -> float:
     judge_cfg = {
         "judge_api_base": judge_api_base,
@@ -144,9 +180,14 @@ def compute_score(
         sim_score = 0.0
     reward = 1.0 if sim_score >= threshold else 0.0
 
-    if not _has_thinking(solution_str_original):
-        print(f"[compute_score] warning: no thinking found in response [{solution_str}]")
-        reward -= 0.1
+    if penalize_no_thinking:
+        if not _has_thinking(solution_str_original):
+            print(f"[compute_score] warning: no thinking found in response [{solution_str_original}]")
+            reward -= 0.1
+    task_status_gt = extra_info['ground_truth']['task_status_text']
+    if not _has_exact_match_task_status(solution_str, task_status_gt):
+        print(f"[compute_score] debug: task status mismatch in response [{solution_str}] vs gt [{task_status_gt}]")
+        reward -= 0.5
     return reward
 
 
@@ -165,6 +206,7 @@ def batched_compute_score(
     max_token_to_judge=128,
     embed_query_template_name=None,
     threshold: float = 0.8,
+    penalize_no_thinking: bool = True,
     judge_api_concurrency=4,
     **kwargs
 ) -> list[float]:
@@ -183,7 +225,8 @@ def batched_compute_score(
                 judge_embed_model_name=judge_embed_model_name,
                 max_token_to_judge=max_token_to_judge,
                 embed_query_template_name=embed_query_template_name,
-                threshold=threshold
+                threshold=threshold,
+                penalize_no_thinking=penalize_no_thinking,
             )
             futures.append(future)
         

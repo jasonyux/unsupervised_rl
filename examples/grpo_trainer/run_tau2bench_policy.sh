@@ -3,85 +3,87 @@ ENGINE=${1:-vllm}
 # export VLLM_ATTENTION_BACKEND=XFORMERS
 export VLLM_USE_V1=0
 export WANDB_PROJECT=rl_early_experience
-export WANDB_RUN_GROUP=alfworld_rl_after_state_pred
+export WANDB_RUN_GROUP=tau2bench_rl_after_state_pred
 
-N_GPUS=2
+N_GPUS=4
 
 
 ### model
-# model_path=Qwen/Qwen2.5-7B-Instruct
-# model_id=qwen2.5-7b
-# model_path=checkpoints/alfworld_wm_sft/qwen2.5-7b-instruct-nspred_sft-solver_all-custnsppromptv1-2048seeds-1.0_1.0p-2epoch-2e-6lr-2048seq/checkpoint-1114
-# model_id=qwen2.5-7b-nspred_sft-solver_all-custnsppromptv1-2048seeds-ckpt1114
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-solver-all-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-combined0to2048-bsz32-gen512-jdgd128/global_step_172/checkpoint-172-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-solver-all-custnsppromptv1-shortsubp-s30h2-2048s-ckpt172
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-solver-all-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-combined0to2048-bsz32-gen512-jdgd128-ep4/global_step_344/checkpoint-344-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-solver-all-custnsppromptv1-shortsubp-s30h2-2048s-ckpt344
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-shortsubp-default_w_refl-step30_hist2-bsz32-gen512-jdgd128-ep2/global_step_710/checkpoint-710-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-solver2048s-plus-react-qwen3-235b-inst-custnsppromptv1-shortsubp-s30h2-2048s-ckpt710
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-mstatep-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep1/global_step_793/checkpoint-793-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-mstatep-s30h2t1.0_3repeats-ckpt793
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnspwsuccv2simu-shortsubpfail0.3-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_624/checkpoint-624-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnspwsuccv2simu-shortsubpfail0.3-s30h2t1.0_3repeats-ckpt624
-# model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-sampr-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_1062/checkpoint-1062-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-sampr-s30h2t1.0_3repeats-ckpt1062
-model_path=checkpoints/alfworld_state_pred/alfworld-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp32bgt30ppl-default_w_refl-s30h2t1.0_3repeats-bsz32-gen512-jdgd100-ep2/global_step_598/checkpoint-598-actor
-model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-inst-custnsppromptv1-shortsubp-samp32bgt30ppl-s30h2t1.0_3repeats-ckpt598
+model_path=Qwen/Qwen2.5-7B-Instruct
+model_id=qwen2.5-7b
+# model_path=checkpoints/tau2_state_pred/tau2-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-userqwen235b-shortsubp-noempty-samp0.0r-tmpqwen2.5-s60h5_3repeats-bsz32-gen1024-jdgd256-ep4/global_step_304/checkpoint-304-actor
+# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-userqwen235b-noempty-samp0.0r-ckpt304
 disable_mm_preprocessor_cache=False  # use True for VL models
 disable_cascade_attn=True # use True for A100
 save_intermediate_outputs=True
 
 
 ### env
-env_name=alfworld/AlfredTWEnv
-env_id=alfworld-text
-# env_max_steps=50
-env_max_steps=15
-# env_max_steps=10
-# env_text_template_key='default_w_plan_w_refl'
-env_text_template_key='default_w_refl'
-max_history_length=2
+test_task_set_name=retail
+test_task_split_name=test
+train_task_set_name=retail
+train_task_split_name=train
+# user_llm=gpt-4.1
+# user_llm_temperature=0.0
+# user_llm_api_base=https://api.openai.com/v1
+# user_llm_api_key=${OPENAI_API_KEY}
+# user_llm_save_name=gpt4.1
+user_llm=hosted_vllm/Qwen3-235B-A22B-Instruct-2507
+user_llm_temperature=0.0
+user_llm_api_base=http://blp-wmrlzrmz5-master-1.blp-wmrlzrmz5:12500/v1
+user_llm_api_key=empty
+user_llm_max_completion_tokens=512
+user_llm_save_name=qwen3-235b-a22b-inst-2507
 
 
-max_prompt_length=2048
+env_id=tau2bench-$test_task_set_name
+env_max_steps=30
+env_max_concurrency=8
+# env_text_template_key='qwen2.5'
+env_text_template_key='qwen2.5_wthink'
+max_history_length=5
+
+
+max_prompt_length=13332 # 12240 could still go over with h5
 response_length=1024
 
 
 ### data and batching
 # train_data_size=32
 train_data_size=8
-# val_data_size=128
-val_data_size=64
+val_data_size=32
 group_size=8  # default 8
 mode="mean_std_norm" # "mean_norm" or "mean_std_norm"
 
 randomize_reset_seed=True
-train_dset_fpath=data/verl-agent/text/train_alfworld_$train_data_size.parquet
-val_dset_fpath=data/verl-agent/text/test_alfworld_$val_data_size.parquet
+train_dset_fpath=data/verl-agent/text/train_tau2bench_$train_data_size.parquet
+val_dset_fpath=data/verl-agent/text/test_tau2bench_$val_data_size.parquet
 
 
 #### training hparam
 ppo_mini_batch_size=64  # after rollout, ppo updates once per ppo_mini_batch_size effectively
-ppo_micro_batch_size_per_gpu=8
-log_prob_micro_batch_size_per_gpu=16
+# ppo_micro_batch_size_per_gpu=8
+# log_prob_micro_batch_size_per_gpu=16
+ppo_micro_batch_size_per_gpu=4
+log_prob_micro_batch_size_per_gpu=8
 lr=1e-6
 entropy_coef=0.001
 train_wm=False
-train_epochs=300
+train_epochs=200
 
 
 ### logging and saving
 # save_freq=100
-save_freq=150
-test_freq=20
+save_freq=100
+test_freq=10
 log_val_generations=1
-val_temperature=1.0
+val_temperature=0.1
 
 
 ### run
 # algo=gigpo
 algo=grpo
-exp_name=${env_id}s${env_max_steps}_${algo}_prompt${env_text_template_key}_${model_id}_bsz${train_data_size}
+exp_name=${env_id}-user${user_llm_save_name}-s${env_max_steps}_${algo}_prompt${env_text_template_key}_${model_id}_bsz${train_data_size}
 # exp_name=run2-${env_id}s${env_max_steps}_${algo}_prompt${env_text_template_key}_${model_id}_bsz${train_data_size}
 # default_local_dir=/home/checkpoints_early_exp/$WANDB_RUN_GROUP/$exp_name
 # default_local_dir=checkpoints_early_exp/$WANDB_RUN_GROUP/$exp_name
@@ -132,6 +134,7 @@ python -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.val_kwargs.do_sample=True \
     actor_rollout_ref.rollout.engine_kwargs.vllm.disable_mm_preprocessor_cache=$disable_mm_preprocessor_cache \
     actor_rollout_ref.rollout.engine_kwargs.vllm.disable_cascade_attn=$disable_cascade_attn \
+    actor_rollout_ref.rollout.max_num_batched_tokens=$((max_prompt_length + response_length)) \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=$log_prob_micro_batch_size_per_gpu \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     actor_rollout_ref.actor.use_invalid_action_penalty=True \
@@ -147,7 +150,17 @@ python -m verl.trainer.main_ppo \
     env.text_template_key=$env_text_template_key \
     env.max_history_length=$max_history_length \
     env.rollout.n=$group_size \
-    env.env_name=alfworld/AlfredTWEnv \
+    env.env_name=tau2bench \
+    env.tau2bench.user_llm=$user_llm \
+    env.tau2bench.user_llm_args.temperature=$user_llm_temperature \
+    env.tau2bench.user_llm_args.api_base=$user_llm_api_base \
+    env.tau2bench.user_llm_args.api_key=$user_llm_api_key \
+    env.tau2bench.user_llm_args.max_completion_tokens=$user_llm_max_completion_tokens \
+    env.tau2bench.test_task_set_name=$test_task_set_name \
+    env.tau2bench.test_task_split_name=$test_task_split_name \
+    env.tau2bench.task_set_name=$train_task_set_name \
+    env.tau2bench.task_split_name=$train_task_split_name \
+    env.tau2bench.max_concurrency=$env_max_concurrency \
     trainer.ray_wait_register_center_timeout=600 \
     trainer.critic_warmup=0 \
     trainer.logger=['console','wandb'] \
