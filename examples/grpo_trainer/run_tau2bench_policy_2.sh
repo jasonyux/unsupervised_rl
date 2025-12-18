@@ -19,10 +19,10 @@ RO_FREE_CACHE_ENGINE=True
 ### model
 # model_path=Qwen/Qwen2.5-7B-Instruct
 # model_id=qwen2.5-7b
-model_path=/data/users/shared/models/Qwen3-8B
-model_id=qwen3-8b
-# model_path=checkpoints/tau2_state_pred/tau2-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-userqwen235b-shortsubp-noempty-samp0.0r-tmpqwen2.5-s60h5_3repeats-bsz32-gen1024-jdgd256-ep4/global_step_304/checkpoint-304-actor
-# model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-userqwen235b-noempty-samp0.0r-ckpt304
+# model_path=/data/users/shared/models/Qwen3-8B
+# model_id=qwen3-8b
+model_path=checkpoints/tau2_state_pred/tau2-qwen3-8b-state_pred-grpo-q8b-embed-v3-t2b-g8-react-alldomains-v2nopanocr-qwen8b-uq235bngpt4.1-slusubp-noempty-nofterminal-slt0.0tdrt0.85-s60h5_3repeats-bsz32-gen8192-jdgd512-trsh0.6-ep2/global_step_148/checkpoint-148-actor
+model_id=qwen3-8b-state_pred-embed-v3-t2b-alldomains-v2nopanocr-q8b-uq235bngpt4.1-slusubp-noept-nofterm-slt0.0tdrt0.85-t0.6-ckpt148
 disable_mm_preprocessor_cache=False  # use True for VL models
 disable_cascade_attn=True # use True for A100
 save_intermediate_outputs=True

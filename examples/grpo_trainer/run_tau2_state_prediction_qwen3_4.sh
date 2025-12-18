@@ -17,34 +17,14 @@ RO_FREE_CACHE_ENGINE=True
 # N_GPUS=8
 # N_TENSOR_PARALLEL=2
 
-
-# train_dset_fpath=data/state_pred/tau2bench/react-qwen7b-inst-userqwen3-235b-a22b-inst-2507-tmpqwen2.5-step60_h5_3repeats/train_shortsubp_no_empty_no_user_samp0.0r.parquet
-# val_dset_fpath=data/state_pred/tau2bench/react-qwen7b-inst-userqwen3-235b-a22b-inst-2507-tmpqwen2.5-step60_h5_3repeats/test_no_empty_no_user.parquet
-# dset_short_name=react-qwen7b-userqwen235b-shortsubp-noempty-nouser-samp0.0r-tmpqwen2.5-s60h5_3repeats
-# train_dset_fpath=data/state_pred/tau2bench/react-qwen7b-inst-userqwen3-235b-a22b-inst-2507-tmpqwen2.5-step60_h5_3repeats/train_shortsubp_longsubp_noempty_samp0.0r.parquet
-# val_dset_fpath=data/state_pred/tau2bench/react-qwen7b-inst-userqwen3-235b-a22b-inst-2507-tmpqwen2.5-step60_h5_3repeats/test_no_empty.parquet
-# dset_short_name=react-qwen7b-userqwen235b-shortsubp-longsubp-noempty-samp0.0r-tmpqwen2.5-s60h5_3repeats
-# train_dset_fpath=data/state_pred/tau2bench/react-qwen7b-usergpt4.1-plus-userqwen235b-tmpqwen2.5-step60_h5_3repeats/train_shortsubp_longsubp_noempty_samp0.0r.parquet
-# val_dset_fpath=data/state_pred/tau2bench/react-qwen7b-usergpt4.1-plus-userqwen235b-tmpqwen2.5-step60_h5_3repeats/test_no_empty_512.parquet
-# dset_short_name=react-qwen7b-usergpt4.1-plus-userqwen235b-shortsubp-longsubp-noempty-samp0.0r-s60h5_3repeats
-# train_dset_fpath=data/state_pred/tau2bench/react-qwen7b-inst-userqwen3-235b-a22b-inst-2507-tmpqwen2.5-step60_h5_3repeats/train_shortlongsubp_noempty_samplt0.0trainedr.parquet
-# val_dset_fpath=data/state_pred/tau2bench/react-qwen7b-inst-userqwen3-235b-a22b-inst-2507-tmpqwen2.5-step60_h5_3repeats/test_shortlongsubp_noempty_samplt0.0trainedr.parquet
-# dset_short_name=react-qwen7b-userqwen235b-shortlongsubp-noempty-samplt0.0trainedr-s60h5_3repeats
-# train_dset_fpath=data/state_pred/tau2bench/react-alldomains-qwen8b-userqwen235b-tmpqwen2.5-step60_h5_3repeats/train_shortlongsubp_noempty_nofterminal_samplt0.0trainedr.parquet
-# val_dset_fpath=data/state_pred/tau2bench/react-alldomains-qwen8b-userqwen235b-tmpqwen2.5-step60_h5_3repeats/test_no_empty_no_fterminal.parquet
-# dset_short_name=react-alldomains-qwen8b-userqwen235b-shortlongsubp-noempty-nofterminal-samplt0.0trainedr-s60h5_3repeats
-# train_dset_fpath=data/state_pred/tau2bench/react-alldomains-qwen8b-userqwen235bngpt4.1-tmpqwen2.5-step60_h5_3repeats/train_shortlongusersubp_noempty_nofterminal_samplt0.0trainedr.parquet
-# val_dset_fpath=data/state_pred/tau2bench/react-alldomains-qwen8b-userqwen235bngpt4.1-tmpqwen2.5-step60_h5_3repeats/test_no_empty_no_fterminal_512.parquet
-# dset_short_name=react-alldomains-qwen8b-userqwen235b-ngpt4.1-shortlongsubp-noempty-nofterminal-samplt0.0trainedr-s60h5_3repeats
 # train_dset_fpath=data/state_pred/tau2bench/react-alldomains-v2nopanocr-qwen8b-userqwen235bngpt4.1-tmpqwen2.5-step60_h5_3repeats/train_shortlongusersubp_noempty_nofterminal_samplt0.0trainedrt0.85.parquet
-# val_dset_fpath=data/state_pred/tau2bench/react-alldomains-v2nopanocr-qwen8b-userqwen235bngpt4.1-tmpqwen2.5-step60_h5_3repeats/train_no_empty_no_fterminal_512.parquet
-# dset_short_name=react-alldomains-v2nopanocr-qwen8b-uq235bngpt4.1-slusubp-noempty-nofterminal-slt0.0tdrt0.85-s60h5_3repeats
-# train_dset_fpath=data/state_pred/tau2bench/react-alldomains-v2nopanocr-qwen7bn8b-userqwen235b-tmpqwen2.5-step60_h5_3repeats/train_usersubp_addtool_noempty_nofterminal_notf_samplt0.0trainedrt0.85.parquet
-# val_dset_fpath=data/state_pred/tau2bench/react-alldomains-v2nopanocr-qwen7bn8b-userqwen235b-tmpqwen2.5-step60_h5_3repeats/test_no_empty_no_fterminal_512.parquet
-# dset_short_name=react-alldomains-v2nopanocr-qwen7bn8b-uq235b-susubp-addtool-noempty-nofterminal-notf-slt0.0tdrt0.85-s60h5_3repeats
-train_dset_fpath=data/state_pred/tau2bench/react-alldomains-v2nopanocr-qwen8b-userqwen235bngpt4.1-tmpqwen2.5-step60_h5_3repeats/train_shortlongusersubp_noempty_nofterminal_samplt0.0trainedrt0.85.parquet
+# val_dset_fpath=data/state_pred/tau2bench/react-alldomains-v2nopanocr-qwen8b-userqwen235bngpt4.1-tmpqwen2.5-step60_h5_3repeats/test_no_empty_no_fterminal_512.parquet
+# dset_short_name=react-alldomains-v2nopanocr-qwen8b-uq235bngpt4.1-slusubp-noept-nofterm-slt0.0tdrt0.85-s60h5_3repeats
+train_dset_fpath=data/state_pred/tau2bench/react-alldomains-v2nopanocr-qwen8b-userqwen235bngpt4.1-tmpqwen2.5-step60_h5_3repeats/train_longusersubp_noempty_nofterminal_samplt0.0trainedrt0.85.parquet
 val_dset_fpath=data/state_pred/tau2bench/react-alldomains-v2nopanocr-qwen8b-userqwen235bngpt4.1-tmpqwen2.5-step60_h5_3repeats/test_no_empty_no_fterminal_512.parquet
-dset_short_name=react-alldomains-v2nopanocr-qwen8b-uq235bngpt4.1-slusubp-noept-nofterm-slt0.0tdrt0.85-s60h5_3repeats
+dset_short_name=react-alldomains-v2nopanocr-qwen8b-uq235bngpt4.1-lusubp-noept-nofterm-slt0.0tdrt0.85-s60h5_3repeats
+
+
 
 
 train_batch_size=32
@@ -62,7 +42,8 @@ max_response_length=8192  # qwen3-8b model
 # export JUDGE_GEN_KWARGS='{"temperature": 0.7, "max_completion_tokens": 2048}'
 # reward_fn_path=unsupervised_rl/rewards/judge_next_state.py
 # reward_short_name=q235b-judge
-JUDGE_EMBED_MODEL_API_BASE=http://blp-wmrl6nkbtwl-worker-4.blp-wmrl6nkbtwl:12200/v1
+# JUDGE_EMBED_MODEL_API_BASE=http://blp-wmrl6nkbtwl-worker-4.blp-wmrl6nkbtwl:12200/v1
+JUDGE_EMBED_MODEL_API_BASE=http://blp-wmrl6nkbtwl-worker-4.blp-wmrl6nkbtwl:12201/v1
 JUDGE_EMBED_MODEL_API_KEY=empty
 JUDGE_EMBED_MODEL_NAME=qwen-embedding-8b
 JUDGE_GEN_KWARGS='{}'
