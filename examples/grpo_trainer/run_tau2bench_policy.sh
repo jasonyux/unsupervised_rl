@@ -5,12 +5,19 @@ export VLLM_USE_V1=0
 export WANDB_PROJECT=rl_early_experience
 export WANDB_RUN_GROUP=tau2bench_rl_after_state_pred
 
+export TOKENIZERS_PARALLELISM=true
+export NCCL_DEBUG=WARN
+export VLLM_LOGGING_LEVEL=WARN
+export VLLM_ALLOW_RUNTIME_LORA_UPDATING=true
+
 N_GPUS=4
 
 
 ### model
 model_path=Qwen/Qwen2.5-7B-Instruct
 model_id=qwen2.5-7b
+model_path=/data/users/shared/models/Qwen3-8B
+model_id=qwen3-8b
 # model_path=checkpoints/tau2_state_pred/tau2-qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-userqwen235b-shortsubp-noempty-samp0.0r-tmpqwen2.5-s60h5_3repeats-bsz32-gen1024-jdgd256-ep4/global_step_304/checkpoint-304-actor
 # model_id=qwen2.5-7b-state_pred-grpo-q8b-embed-g8-react-qwen7b-userqwen235b-noempty-samp0.0r-ckpt304
 disable_mm_preprocessor_cache=False  # use True for VL models
@@ -30,7 +37,8 @@ train_task_split_name=train
 # user_llm_save_name=gpt4.1
 user_llm=hosted_vllm/Qwen3-235B-A22B-Instruct-2507
 user_llm_temperature=0.0
-user_llm_api_base=http://blp-wmrlzrmz5-master-1.blp-wmrlzrmz5:12500/v1
+# user_llm_api_base=http://blp-wmrlzrmz5-master-1.blp-wmrlzrmz5:12500/v1
+user_llm_api_base=http://blp-wmrl6nkbtwl-worker-4.blp-wmrl6nkbtwl:12500/v1
 user_llm_api_key=empty
 user_llm_max_completion_tokens=512
 user_llm_save_name=qwen3-235b-a22b-inst-2507
@@ -39,13 +47,13 @@ user_llm_save_name=qwen3-235b-a22b-inst-2507
 env_id=tau2bench-$test_task_set_name
 env_max_steps=30
 env_max_concurrency=8
-# env_text_template_key='qwen2.5'
-env_text_template_key='qwen2.5_wthink'
+env_text_template_key='qwen2.5'
+# env_text_template_key='qwen2.5_wthink'
 max_history_length=5
 
 
 max_prompt_length=13332 # 12240 could still go over with h5
-response_length=1024
+response_length=8192
 
 
 ### data and batching

@@ -210,12 +210,12 @@ def compute_score(
             reward -= 0.1
     task_status_gt = extra_info['ground_truth']['task_status_text']
     if not _has_exact_match_task_status(solution_str, task_status_gt):
-        print(f"[compute_score] debug: task status mismatch in response [{solution_str}] vs gt [{task_status_gt}]")
+        # print(f"[compute_score] debug: task status mismatch in response [{solution_str}] vs gt [{task_status_gt}]")
         reward -= 0.5
     _debug_reward_stats['final_reward'] = reward
 
-    if random.random() < 0.05:
-        print(f"[compute_score] debug reward stats: {_debug_reward_stats} from response [{solution_str_original}] and gt [{ground_truth}]")
+    if random.random() < 0.02:
+        # print(f"[compute_score] debug reward stats: {_debug_reward_stats} from response [{solution_str_original}] and gt [{ground_truth}]")
     return reward
 
 
