@@ -6,6 +6,8 @@ import concurrent.futures
 import tiktoken
 import time
 import cachetools
+import random
+from enum import Enum
 
 
 EMBED_QUERY_TEMPLATE_V1 = """
@@ -31,10 +33,14 @@ _HELPER_TOKENIZER = tiktoken.encoding_for_model("gpt-4o")
 _EMBED_CACHE = cachetools.Cache(maxsize=1000)
 
 
+class TaskStatusCode(Enum):
+    # "successfully completed", "not yet completed", or "failed"
+    COMPLETED = "successfully completed"
+    IN_PROGRESS = "not yet completed"
+    FAILED = "failed"
+
+
 def _init_openai_client(api_base=None, api_key=None):
-    # judge_cfg = _get_judge_config()
-    # api_base = judge_cfg["api_base"]
-    # api_key = judge_cfg["api_key"]
     return openai.OpenAI(base_url=api_base, api_key=api_key)
 
 
@@ -54,6 +60,57 @@ def _parse_nsp(data_source, solution_str, parsing_metadata, max_token_to_judge):
     return nsp_text.strip()
 
 
+def _extract_task_status_from_gt(ground_truth: str) -> str:
+    if "Task is successfully completed!" in ground_truth:
+        return "Task is successfully completed!"
+    elif "Task is not yet completed." in ground_truth:
+        return "Task is not yet completed."
+    else:
+        raise ValueError(f"unknown task status str {ground_truth=}")
+
+
+def _has_exact_match_task_status(solution_str: str, gt_str: str) -> bool:
+    sol_lines = solution_str.strip().splitlines()
+    if not sol_lines:
+        return False
+    last_line = sol_lines[-1].strip()
+    if TaskStatusCode.COMPLETED.value in gt_str:
+        return (
+            TaskStatusCode.COMPLETED.value in last_line \
+            and TaskStatusCode.IN_PROGRESS.value not in last_line \
+            and TaskStatusCode.FAILED.value not in last_line
+        )
+    elif TaskStatusCode.IN_PROGRESS.value in gt_str:
+        return (
+            TaskStatusCode.IN_PROGRESS.value in last_line \
+            and TaskStatusCode.COMPLETED.value not in last_line \
+            and TaskStatusCode.FAILED.value not in last_line
+        )
+    elif TaskStatusCode.FAILED.value in gt_str:
+        return (
+            TaskStatusCode.FAILED.value in last_line \
+            and TaskStatusCode.COMPLETED.value not in last_line \
+            and TaskStatusCode.IN_PROGRESS.value not in last_line
+        )
+    else:
+        raise ValueError(f"unknown {gt_str=}")
+
+
+def _has_language_mixing(s, threshold=0.1) -> bool:
+    not_ok_strings = []
+    for ss in s.split():
+        if not ss.isascii():
+            not_ok_strings.append(ss)
+    not_ok_text = ' '.join(not_ok_strings)
+    not_ok_n_tokens = len(_HELPER_TOKENIZER.encode(not_ok_text, disallowed_special=()))
+    total_n_tokens = len(_HELPER_TOKENIZER.encode(s, disallowed_special=()))
+    if total_n_tokens == 0:
+        return False
+    if not_ok_n_tokens / total_n_tokens > threshold:
+        return True
+    return False
+
+
 def _has_thinking(solution_str: str) -> bool:
     start_of_think_tag = "<think>"
     end_of_think_tag = "</think>"
@@ -69,6 +126,27 @@ def _has_thinking(solution_str: str) -> bool:
         return n_tokens > 16
 
 
+def _has_correct_format(solution_str: str, parsing_metadata) -> bool:
+    nsp_parse_tags = parsing_metadata["nsp_parse_tags"]
+    nsp_start_tag, nsp_end_tag = nsp_parse_tags
+    if solution_str.count(nsp_start_tag) != 1:
+        return False
+    if solution_str.count(nsp_end_tag) != 1:
+        return False
+    think_start_tag = "<think>"
+    think_end_tag = "</think>"
+    if solution_str.count(think_start_tag) != 1:
+        return False
+    if solution_str.count(think_end_tag) != 1:
+        return False
+    
+    if not solution_str.startswith(think_start_tag):
+        return False
+    if not solution_str.endswith(nsp_end_tag):
+        return False
+    return True
+
+
 def compute_score(
     data_source,
     solution_str,
@@ -79,7 +157,7 @@ def compute_score(
     judge_embed_model_name=None,
     max_token_to_judge=None,
     embed_query_template_name=None,
-    threshold: int = 0.8
+    threshold: float = 0.8
 ) -> float:
     judge_cfg = {
         "judge_api_base": judge_api_base,
@@ -142,11 +220,38 @@ def compute_score(
     except Exception as e:
         print(f"[compute_score] error parsing {response=}: {e}")
         sim_score = 0.0
+    _debug_reward_stats = {}
+    _debug_reward_stats['sim_score'] = sim_score
+
     reward = 1.0 if sim_score >= threshold else 0.0
 
+    _debug_reward_stats['task_status_match'] = True
+    task_status_gt = _extract_task_status_from_gt(ground_truth)
+    if not _has_exact_match_task_status(solution_str, task_status_gt):
+        # print(f"[compute_score] debug: task status mismatch in response [{solution_str}] vs gt [{task_status_gt}]")
+        _debug_reward_stats['task_status_match'] = False
+        reward -= 0.5
+
+    _debug_reward_stats['language_mixing'] = False
+    if _has_language_mixing(solution_str_original):
+        # print(f"[compute_score] warning: language mixing found in response [{solution_str_original}]")
+        _debug_reward_stats['language_mixing'] = True
+        reward -= 0.2
+
+    _debug_reward_stats['thinking'] = True
+    _debug_reward_stats['correct_format'] = True
     if not _has_thinking(solution_str_original):
-        print(f"[compute_score] warning: no thinking found in response [{solution_str}]")
-        reward -= 0.1
+        # print(f"[compute_score] warning: no thinking found in response [{solution_str}]")
+        _debug_reward_stats['thinking'] = False
+        reward -= 0.2
+    if not _has_correct_format(solution_str_original, parsing_metadata):
+        # print(f"[compute_score] warning: incorrect format found in response [{solution_str}]")
+        _debug_reward_stats['correct_format'] = False
+        reward -= 0.2
+    _debug_reward_stats['final_reward'] = reward
+    
+    if random.random() < 0.01:
+        print(f"[compute_score] debug reward stats: {_debug_reward_stats} from response [{solution_str_original}] and gt [{ground_truth}]")
     return reward
 
 

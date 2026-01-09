@@ -6,6 +6,7 @@ import concurrent.futures
 import tiktoken
 import time
 import cachetools
+import random
 from enum import Enum
 
 
@@ -179,15 +180,20 @@ def compute_score(
         print(f"[compute_score] error parsing {response=}: {e}")
         sim_score = 0.0
     reward = 1.0 if sim_score >= threshold else 0.0
+    _debug_reward_stats = {'sim_score': sim_score, 'threshold': threshold}
 
     if penalize_no_thinking:
         if not _has_thinking(solution_str_original):
-            print(f"[compute_score] warning: no thinking found in response [{solution_str_original}]")
+            # print(f"[compute_score] warning: no thinking found in response [{solution_str_original}]")
             reward -= 0.1
     task_status_gt = extra_info['ground_truth']['task_status_text']
     if not _has_exact_match_task_status(solution_str, task_status_gt):
-        print(f"[compute_score] debug: task status mismatch in response [{solution_str}] vs gt [{task_status_gt}]")
+        # print(f"[compute_score] debug: task status mismatch in response [{solution_str}] vs gt [{task_status_gt}]")
         reward -= 0.5
+    _debug_reward_stats['main_reward'] = reward
+
+    if random.random() < 0.01:
+        print(f"[compute_score] debug reward stats: {_debug_reward_stats} from response [{solution_str_original}] and gt [{ground_truth}]")
     return reward
 
 

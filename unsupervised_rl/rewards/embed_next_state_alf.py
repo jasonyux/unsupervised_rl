@@ -115,6 +115,31 @@ def _has_exact_match_task_status(solution_str: str, gt_str: str) -> bool:
         raise ValueError(f"unknown {gt_str=}")
 
 
+def _has_language_mixing(s, threshold=0.1) -> bool:
+    not_ok_strings = []
+    for ss in s.split():
+        if not ss.isascii():
+            not_ok_strings.append(ss)
+    not_ok_text = ' '.join(not_ok_strings)
+    not_ok_n_tokens = len(_HELPER_TOKENIZER.encode(not_ok_text, disallowed_special=()))
+    total_n_tokens = len(_HELPER_TOKENIZER.encode(s, disallowed_special=()))
+    if total_n_tokens == 0:
+        return False
+    if not_ok_n_tokens / total_n_tokens > threshold:
+        return True
+    return False
+
+
+
+def _extract_task_status_from_gt(ground_truth: str) -> str:
+    if "Task is successfully completed!" in ground_truth:
+        return "Task is successfully completed!"
+    elif "Task is not yet completed." in ground_truth:
+        return "Task is not yet completed."
+    else:
+        raise ValueError(f"unknown task status str {ground_truth=}")
+
+
 def compute_score(
     data_source,
     solution_str,
@@ -129,7 +154,6 @@ def compute_score(
     penalize_no_thinking: bool = True,
     tool_rouge_metric: str = 'rougeL',
     tool_rouge_bin: float = 0.2,
-    has_think_in_prompt: bool = False,
 ) -> float:
     judge_cfg = {
         "judge_api_base": judge_api_base,
@@ -143,14 +167,10 @@ def compute_score(
         print(f"[compute_score] using {judge_cfg=}")
         _JUDGE_CFG_IN_COMPUTE_SCORE[judge_cfg_key] = judge_cfg
 
-    _debug_reward_stats = {}
     obs_text = extra_info["obs_text"]
     obs_images = extra_info["obs_images"]
     action_text = extra_info["action_text"]
     parsing_metadata = extra_info.get("parsing_metadata", {})
-    if has_think_in_prompt:
-        solution_str = "<think>" + solution_str
-
     solution_str_original = solution_str
     if parsing_metadata:
         solution_str = _parse_nsp(data_source, solution_str, parsing_metadata, max_token_to_judge)
@@ -170,49 +190,26 @@ def compute_score(
     query = template.format(reference=ground_truth)
     document = solution_str
 
-    client = _init_openai_client(judge_api_base, judge_api_key)
 
-    input_texts = [query, document]
-    if query in _EMBED_CACHE:
-        query_embedding = _EMBED_CACHE[query]
-        input_texts = [document]
-
-    try:
-        response = client.embeddings.create(
-            model=judge_embed_model_name,
-            input=input_texts,
-            encoding_format="float",
-        )
-        if len(response.data) == 2:
-            query_embedding = np.array(response.data[0].embedding)
-            query_embedding = query_embedding / np.linalg.norm(query_embedding)
-            document_embedding = np.array(response.data[1].embedding)
-            document_embedding = document_embedding / np.linalg.norm(document_embedding)
-            _EMBED_CACHE[query] = query_embedding
-        else:
-            document_embedding = np.array(response.data[0].embedding)
-            document_embedding = document_embedding / np.linalg.norm(document_embedding)
-        sim_score = query_embedding @ document_embedding
-    except Exception as e:
-        print(f"[compute_score] error parsing {response=}: {e}")
-        sim_score = 0.0
-
-    response_type = extra_info['metadata']['response_type']
-    _debug_reward_stats['response_type'] = response_type
-    if response_type == "tool":
-        reward = compute_rouge_score(ground_truth, solution_str, rouge_metric=tool_rouge_metric)
-        _debug_reward_stats['rouge_score'] = reward
-        reward = round(reward / tool_rouge_bin) * tool_rouge_bin
-    else:
-        _debug_reward_stats['sim_score'] = sim_score
-        reward = 1.0 if sim_score >= threshold else 0.0
+    _debug_reward_stats = {}
+    reward = compute_rouge_score(ground_truth, solution_str, rouge_metric=tool_rouge_metric)
+    _debug_reward_stats['rouge_score'] = reward
+    reward = round(reward / tool_rouge_bin) * tool_rouge_bin
     _debug_reward_stats['main_reward'] = reward
 
     if penalize_no_thinking:
         if not _has_thinking(solution_str_original):
             # print(f"[compute_score] warning: no thinking found in response [{solution_str_original}]")
             reward -= 0.1
-    task_status_gt = extra_info['ground_truth']['task_status_text']
+
+    _debug_reward_stats['language_mixing'] = False
+    if _has_language_mixing(solution_str_original):
+        _debug_reward_stats['language_mixing'] = True
+        # print(f"[compute_score] warning: language mixing found in response [{solution_str_original}]")
+        reward -= 0.2
+
+    # task_status_gt = extra_info['ground_truth']['task_status_text']
+    task_status_gt = _extract_task_status_from_gt(ground_truth)
     if not _has_exact_match_task_status(solution_str, task_status_gt):
         # print(f"[compute_score] debug: task status mismatch in response [{solution_str}] vs gt [{task_status_gt}]")
         reward -= 0.5
@@ -241,7 +238,6 @@ def batched_compute_score(
     penalize_no_thinking: bool = True,
     tool_rouge_metric: str = 'rougeL',
     tool_rouge_bin: float = 0.2,
-    has_think_in_prompt: bool = False,
     judge_api_concurrency=4,
     **kwargs
 ) -> list[float]:
@@ -264,7 +260,6 @@ def batched_compute_score(
                 penalize_no_thinking=penalize_no_thinking,
                 tool_rouge_metric=tool_rouge_metric,
                 tool_rouge_bin=tool_rouge_bin,
-                has_think_in_prompt=has_think_in_prompt,
             )
             futures.append(future)
         
