@@ -58,6 +58,10 @@ from transformers import (
     GenerationConfig,
     PretrainedConfig,
 )
+try:
+    from verl.model_merger.megatron_model_merger import MegatronModelMerger
+except ImportError:
+    print("Failed to import MegatronModelMerger. Please ensure that verl is installed with the 'megatron' extra dependencies.")
 
 try:
     # for torch 2.5+
@@ -72,18 +76,38 @@ from verl.utils import hf_processor, hf_tokenizer
 
 @dataclass
 class ModelMergerConfig:
+    """Configuration for model merger operations.
+
+    Args:
+        operation (str): Operation type - 'merge' or 'test'.
+        backend (str): Backend type for the model ('fsdp' or 'megatron').
+        target_dir (Optional[str]): Directory to save the merged huggingface model. Defaults to "tmp".
+        hf_upload_path (Optional[str]): Hugging Face repository ID to upload the model. Defaults to None.
+        private (bool): Whether to upload the model to a private Hugging Face repository. Defaults to False.
+        test_hf_dir (Optional[str]): Path to the reference Hugging Face model directory for testing. Defaults to None.
+        tie_word_embedding (bool): Whether to tie word embedding weights (currently only Megatron
+            supported). Defaults to False.
+        trust_remote_code (bool): Whether to trust remote code. Defaults to False.
+        is_value_model (bool): Whether the model is a value model (currently only Megatron
+            supported). Defaults to False.
+        local_dir (Optional[str]): Path to the saved model checkpoints. Defaults to None.
+        hf_model_config_path (Optional[str]): Path to HuggingFace model configuration files. Defaults to None.
+        hf_upload (bool): Whether to upload to HuggingFace (computed automatically). Not for initialization.
+        use_cpu_initialization (bool): Whether to use CPU initialization for large models. Defaults to False.
+    """
     operation: str  # 'merge' or 'test'
     backend: str
-    local_dir: str
-    hf_model_config_path: str
     target_dir: Optional[str] = "tmp"
     hf_upload_path: Optional[str] = None
     private: bool = False
     test_hf_dir: Optional[str] = None
     tie_word_embedding: bool = False
+    trust_remote_code: bool = False
     is_value_model: bool = False
-    hf_model_path: Optional[str] = None
+    local_dir: Optional[str] = None
+    hf_model_config_path: Optional[str] = None
     hf_upload: bool = field(init=False)
+    use_cpu_initialization: bool = False
 
     def __post_init__(self):
         self.hf_upload = self.operation == "merge" and bool(self.hf_upload_path)
@@ -330,231 +354,9 @@ class FSDPModelMerger(BaseModelMerger):
             torch.testing.assert_close(hf_state_dict[key], state_dict[key], atol=1e-6, rtol=1e-6)
 
         print("FSDP checks passed: The merged state_dict matches the hf model saved by FSDPCheckpointManager.")
-
-
-class MegatronModelMerger(BaseModelMerger):
-    def __init__(self, config: ModelMergerConfig):
-        from verl.utils.megatron_utils import get_hf_config_and_tokenizer_checkpoint_path
-
-        config.hf_model_config_path = get_hf_config_and_tokenizer_checkpoint_path(config.local_dir)
-        super().__init__(config)
-
-    def _get_tp_pp_rank_from_sharded_dir(self, sharded_dir: str) -> tuple[int, int]:
-        match = re.match(r"mp_rank_(\d\d)_(\d\d\d)", sharded_dir)
-        assert match, f"Invalid sharded dir {sharded_dir}"
-        tp_rank = int(match.group(1))
-        pp_rank = int(match.group(2))
-        return tp_rank, pp_rank
-
-    def _check_megatron_checkpoint_path(self, model_path: str) -> tuple[list[str], int, int]:
-        """
-        Validates the Megatron checkpoint structure (presence of 'model.pt' in sharded directories).
-        Determines TP and PP sizes from directory names.
-        """
-        tp_size = 0
-        pp_size = 0
-        sharded_dirs = sorted(os.listdir(model_path))
-        for sharded_dir in sharded_dirs:
-            assert "model.pt" in os.listdir(Path(model_path) / sharded_dir), f"model.pt not found in {sharded_dir}"
-            tp_rank, pp_rank = self._get_tp_pp_rank_from_sharded_dir(sharded_dir)
-            tp_size = max(tp_size, tp_rank + 1)
-            pp_size = max(pp_size, pp_rank + 1)
-        return sharded_dirs, tp_size, pp_size
-
-    def _merge_across_tp(self, key: str, tp_data: list[torch.Tensor], config: PretrainedConfig, tp_size: int, is_value_model: bool = False) -> torch.Tensor | list[torch.Tensor]:
-        if "linear_fc1.weight" in key:
-            # if the tensor is gate and proj
-            gate_lst = []
-            up_lst = []
-            for infer_param in tp_data:
-                gate, up = infer_param.chunk(2)
-                gate_lst.append(gate)
-                up_lst.append(up)
-            gate = torch.cat(gate_lst, dim=0)
-            up = torch.cat(up_lst, dim=0)
-            return [gate, up]
-
-        elif "self_attention.linear_qkv." in key and "layer_norm" not in key:
-            # if the tensor is qkv, for each param on tp, split into q, k, v
-            # concat q, k, v separately.
-            q_lst = []
-            k_lst = []
-            v_lst = []
-            assert config.num_attention_heads % config.num_key_value_heads == 0
-            num_q_per_kv = config.num_attention_heads // config.num_key_value_heads
-            assert tp_data[0].shape[0] % (num_q_per_kv + 2) == 0
-            kv_size_per_tp = tp_data[0].shape[0] // (num_q_per_kv + 2)
-            split_size = [kv_size_per_tp * num_q_per_kv, kv_size_per_tp, kv_size_per_tp]
-
-            for infer_param in tp_data:
-                num_query_groups_per_partition = config.num_key_value_heads // tp_size
-                for chunk in infer_param.chunk(num_query_groups_per_partition):
-                    split_size = [
-                        kv_size_per_tp * num_q_per_kv // num_query_groups_per_partition,
-                        kv_size_per_tp // num_query_groups_per_partition,
-                        kv_size_per_tp // num_query_groups_per_partition,
-                    ]
-                    q, k, v = chunk.split(split_size)
-                    q_lst.append(q)
-                    k_lst.append(k)
-                    v_lst.append(v)
-
-            q = torch.cat(q_lst, dim=0)
-            k = torch.cat(k_lst, dim=0)
-            v = torch.cat(v_lst, dim=0)
-            return [q, k, v]
-
-        elif "layer_norm" in key or "layernorm" in key or "output_layer" in key and is_value_model:
-            return tp_data[0]
-        else:
-            dim = 0
-            if "linear_fc2.weight" in key or "self_attention.linear_proj" in key:
-                dim = 1
-            return torch.cat(tp_data, dim=dim)
-
-    def _load_state_dicts(self, model_ckpt_path: str, sharded_dirs: list[str], tp_size: int, pp_size: int) -> list[list[dict]]:
-        model_state_dict_lst = [[None for _ in range(tp_size)] for _ in range(pp_size)]
-
-        def _process_one_megatron_shard(sharded_dir: str):
-            model_file_path = Path(model_ckpt_path) / sharded_dir / "model.pt"
-            state_dict = torch.load(model_file_path, map_location="cpu", weights_only=False)
-            tp_rank, pp_rank = self._get_tp_pp_rank_from_sharded_dir(sharded_dir)
-            model_state_dict_lst[pp_rank][tp_rank] = state_dict
-
-        with ThreadPoolExecutor(max_workers=min(32, os.cpu_count())) as executor:
-            futures = [executor.submit(_process_one_megatron_shard, sharded_dir) for sharded_dir in sharded_dirs]
-            for future in tqdm(futures, desc=f"Loading {len(sharded_dirs)} Megatron shards", total=len(sharded_dirs)):
-                future.result()
-
-        return model_state_dict_lst
-
-    def _merge_state_dicts(self, model_state_dict_lst: list[list[dict]], tp_size: int, pp_size: int) -> dict[str, torch.Tensor]:
-        state_dict = {}
-        vpp_size = len(model_state_dict_lst[0][0])
-        layers_cum = 0
-
-        for vpp_rank in range(vpp_size):
-            for pp_rank in range(pp_size):
-                layers_handled = 0
-                keys = model_state_dict_lst[pp_rank][0][vpp_rank].keys()
-                for key in keys:
-                    if "extra_state" in key:
-                        continue
-                    if self.config.tie_word_embedding and ("output_layer" in key):
-                        print("skip lm_head and reward_head loading because of tie_word_embeddings")
-                        continue
-
-                    new_key = key
-                    if "decoder.layers." in key:
-                        local_layer_no = int(key.split(".")[2])
-                        layers_handled = max(local_layer_no, layers_handled)
-                        global_layer_no = local_layer_no + layers_cum
-                        new_key_list = key.split(".")
-                        new_key_list[2] = str(global_layer_no)
-                        new_key = ".".join(new_key_list)
-
-                    tp_data = [model_state_dict_lst[pp_rank][tp_rank][vpp_rank][key] for tp_rank in range(tp_size)]
-                    merged = self._merge_across_tp(new_key, tp_data, self.model_config, tp_size, self.config.is_value_model)
-
-                    if not isinstance(merged, list):
-                        state_dict[new_key] = merged
-                    elif len(merged) == 3:
-                        # split qkv
-                        for n, d in zip(["q", "k", "v"], merged):
-                            state_dict[new_key.replace("linear_qkv", f"linear_{n}")] = d
-                    elif len(merged) == 2:
-                        # split gate up
-                        state_dict[new_key.replace("linear_fc1", "gate_proj")] = merged[0]
-                        state_dict[new_key.replace("linear_fc1", "up_proj")] = merged[1]
-
-                layers_cum += layers_handled + 1  # zero based
-
-        return state_dict
-
-    def merge_and_save(self):
-        from verl.utils.megatron_utils import get_model_checkpoint_path
-
-        model_ckpt_path = get_model_checkpoint_path(self.config.local_dir)
-        sharded_dirs, tp_size, pp_size = self._check_megatron_checkpoint_path(model_ckpt_path)
-        print(f"sharded_dirs: {sharded_dirs}, tp_size: {tp_size}, pp_size: {pp_size}, mp_size: {len(sharded_dirs)}")
-
-        model_state_dict_lst = self._load_state_dicts(model_ckpt_path, sharded_dirs, tp_size, pp_size)
-        merged_state_dict = self._merge_state_dicts(model_state_dict_lst, tp_size, pp_size)
-        del model_state_dict_lst
-
-        if self.config.operation == "test":
-            if not self.config.test_hf_dir:
-                raise ValueError("test_hf_dir must be provided for test operation")
-            self._test_state_dict(merged_state_dict)
-        elif self.config.operation == "merge":
-            self.save_hf_model_and_tokenizer(merged_state_dict)
-            if self.config.hf_upload:
-                self.upload_to_huggingface()
-        else:
-            raise ValueError(f"Unknown operation: {self.config.operation}")
-
-    def _test_state_dict(self, state_dict: dict[str, torch.Tensor]):
-        """
-        Compares the merged Megatron state_dict against a reference safetensors model.
-        Applies necessary name mappings from Megatron to Hugging Face conventions using _replace_name.
-        """
-        ref_state_dict = load_file(Path(self.config.test_hf_dir) / "model.safetensors")
-
-        params_mapping = [
-            # (megatron core gpt model name, vllm model name)
-            ("self_attention.linear_qkv.layer_norm_weight", "input_layernorm.weight"),
-            ("self_attention.linear_qkv.layer_norm_bias", "input_layernorm.bias"),
-            ("embedding.word_embeddings", "model.embed_tokens"),
-            ("self_attention.linear_qkv", "self_attn.qkv_proj"),
-            ("self_attention.linear_proj", "self_attn.o_proj"),
-            ("pre_mlp_layernorm", "post_attention_layernorm"),
-            ("mlp.linear_fc1.layer_norm_weight", "post_attention_layernorm.weight"),
-            ("mlp.linear_fc1.layer_norm_bias", "post_attention_layernorm.bias"),
-            ("mlp.linear_fc1", "mlp.gate_up_proj"),
-            ("mlp.linear_fc2", "mlp.down_proj"),
-            ("decoder.final_layernorm", "model.norm"),
-            ("output_layer", "lm_head"),
-            ("self_attention.linear_q", "self_attn.q_proj"),
-            ("self_attention.linear_k", "self_attn.k_proj"),
-            ("self_attention.linear_v", "self_attn.v_proj"),
-        ]
-
-        for original_name, loaded_weight in state_dict.items():
-            name = self._replace_name(original_name, params_mapping)
-            if not name or name.endswith(".bias") and name not in ref_state_dict:
-                continue
-            if "rotary_emb.inv_freq" in name:
-                continue
-            if self.config.tie_word_embedding and "lm_head.weight" in name:
-                continue
-            if name not in ref_state_dict:
-                raise RuntimeError(f"key: {name} not exist in state_dict")
-            param = ref_state_dict[name]
-            assert loaded_weight.dtype == param.dtype
-            torch.testing.assert_close(loaded_weight, param, atol=1e-2, rtol=5e-2)
-
-    def _replace_name(self, megatron_name: str, name_mapping: list[tuple[str, str]]) -> str:
-        for m_name, v_name in name_mapping:
-            if m_name not in megatron_name:
-                continue
-            if "layers" in megatron_name:  # deal with decoder layers
-                megatron_name = megatron_name.replace("decoder", "model")
-                megatron_name_list = megatron_name.split(".")
-                if "layer_norm_weight" in megatron_name_list or "layer_norm_bias" in megatron_name_list:
-                    param_name_list = megatron_name_list[:3]
-                    param_name_list.append(v_name)
-                    param_name = ".".join(param_name_list)
-                else:
-                    param_name_list = megatron_name_list[:3]
-                    weight_or_bias = megatron_name_list[-1]
-                    param_name_list.append(v_name)
-                    param_name_list.append(weight_or_bias)
-                    param_name = ".".join(param_name_list)
-                return param_name
-            else:
-                param_name = megatron_name.replace(m_name, v_name)
-                return param_name
-        return None  # Return None if no mapping found
+    
+    def cleanup(self):
+        pass
 
 
 def main():
@@ -583,7 +385,7 @@ def main():
         "tie_word_embedding": args.tie_word_embedding,
         "is_value_model": args.is_value_model,
         # "local_dir": args.local_dir,
-        "hf_model_path": args.hf_model_path,
+        # "hf_model_path": args.hf_model_path,
         # "hf_model_config_path": os.path.join(args.local_dir, "huggingface"),
     }
     assert args.operation == "merge"
@@ -611,21 +413,27 @@ def main():
             **common_config_args,
             local_dir=actor_dir,
             hf_model_config_path=os.path.join(actor_dir, "huggingface"),
+            trust_remote_code=True,
             target_dir=to_save_dir,
             hf_upload_path=args.hf_upload_path,
             private=args.private,
             test_hf_dir=None,
         )
         if config.backend == "fsdp":
+            config.hf_model_path = None  # not needed for FSDP
             merger = FSDPModelMerger(config)
         elif config.backend == "megatron":
+            os.makedirs(config.target_dir, exist_ok=True)
             merger = MegatronModelMerger(config)
         else:
             raise NotImplementedError(f"Unknown backend: {config.backend}")
 
         merger.merge_and_save()
+        print(f"Saved to {to_save_dir}")
+        merger.cleanup()
+        del merger
 
-        ## remove global step
+        # remove global step
         shutil.rmtree(actor_dir)
     return
 
