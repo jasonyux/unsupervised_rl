@@ -10,20 +10,8 @@ import random
 from enum import Enum
 
 
-EMBED_QUERY_TEMPLATE_V1 = """
-Instruct: Given a reference description, retrieve similar descriptions that mentioned all important information in the reference AND correctly described the task completion status specified in the reference.
-Reference: {reference}
-""".strip()
-
-
 EMBED_QUERY_TEMPLATE_V1_NOTS = """
 Instruct: Given a reference description, retrieve similar descriptions that mentioned all important information in the given reference.
-Reference: {reference}
-""".strip()
-
-
-EMBED_QUERY_TEMPLATE_V2 = """
-Instruct: Given a reference description, retrieve similar descriptions that mentioned all important information in the reference AND correctly described whether the action made progress towards completing the task as specified in the reference.
 Reference: {reference}
 """.strip()
 
@@ -183,12 +171,8 @@ def compute_score(
     assert obs_images is None, \
         "multimodal observation is not supported yet"
     
-    if embed_query_template_name == "v1":
-        template = EMBED_QUERY_TEMPLATE_V1
-    elif embed_query_template_name == "v1_nots":
+    if embed_query_template_name == "v1_nots":
         template = EMBED_QUERY_TEMPLATE_V1_NOTS
-    elif embed_query_template_name == "v2":
-        template = EMBED_QUERY_TEMPLATE_V2
     else:
         raise ValueError(f"unknown {embed_query_template_name=}")
 
@@ -225,13 +209,6 @@ def compute_score(
     _debug_reward_stats['sim_score'] = sim_score
 
     reward = 1.0 if sim_score >= threshold else 0.0
-
-    _debug_reward_stats['task_status_match'] = True
-    task_status_gt = _extract_task_status_from_gt(ground_truth)
-    if not _has_exact_match_task_status(solution_str, task_status_gt):
-        # print(f"[compute_score] debug: task status mismatch in response [{solution_str}] vs gt [{task_status_gt}]")
-        _debug_reward_stats['task_status_match'] = False
-        reward -= 0.5
 
     _debug_reward_stats['language_mixing'] = False
     if _has_language_mixing(solution_str_original):
